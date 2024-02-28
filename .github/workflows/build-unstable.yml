@@ -28,7 +28,7 @@ jobs:
     - name: Get the latest stable version
       id: latest_version
       run: |
-        VERSION=$(curl -s https://api.vintagestory.at/stable.json | jq -r 'to_entries | map(select(.value.linuxserver.latest == 1)) | .[0].key')
+        VERSION=$(curl -s https://api.vintagestory.at/unstable.json | jq -r 'to_entries | map(select(.value.linuxserver.latest == 1)) | .[0].key')
         echo "Latest version is $VERSION"
         
         docker image inspect ${{ secrets.DOCKERHUB_REGISTRY }}:$VERSION > /dev/null 2>&1 || IMAGE_EXISTS="false"
@@ -50,4 +50,6 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_REGISTRY }}:${{ steps.latest_version.outputs.TAG }}
         platforms: linux/arm64
-
+        build-args: |
+          VS_VERSION=${{ steps.latest_version.outputs.TAG }}
+          VS_VERSION_TYPE=unstable
