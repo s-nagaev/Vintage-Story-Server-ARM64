@@ -1,18 +1,18 @@
 # syntax=docker/dockerfile:1
 FROM mcr.microsoft.com/dotnet/runtime:7.0 as build
 ARG VS_VERSION
-ARG VS_VERSION_TYPE
+ARG VS_VERSION_TYPE=stable
 
 SHELL ["/bin/bash", "-c"]
-RUN apt-get update && apt-get install -y jq wget
+RUN apt-get update && apt-get install -y jq wget curl
 
 WORKDIR /tmp
 RUN <<EOF
 if [[ -n $VS_VERSION && -n $VS_VERSION_TYPE ]]; then
     server_tarball_url=https://cdn.vintagestory.at/gamefiles/${VS_VERSION_TYPE}/vs_server_linux-x64_${VS_VERSION}.tar.gz
 else
-    wget https://api.vintagestory.at/stable.json
-    server_tarball_url=$(jq -r ".[] | select(.linuxserver.latest == 1) | .linuxserver.urls.cdn" stable.json)
+    version=$(curl -s https://api.vintagestory.at/stable.json | jq -r 'to_entries | map(select(.value.linuxserver.latest == 1)) | .[0].key')
+    server_tarball_url=https://cdn.vintagestory.at/gamefiles/${VS_VERSION_TYPE}/vs_server_linux-x64_$version.tar.gz
 fi
 wget -O vs_server_linux-x64.tar.gz $server_tarball_url
 EOF
